@@ -17,4 +17,5 @@ testpaths = [
 [tool.pylint.messages_control] 
 disable = [
 	'trailing-whitespace',
+	'consider-using-generator',
         ]

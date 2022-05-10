@@ -1,11 +1,4 @@
-import heapq, math
-import numpy as np
-
-__all__ = [
-    'fmm'
-]
-
-'''Implementation of fast marching marching (FMM). The implementations is based on
+'''Implementation of fast marching method (FMM). The implementations is based on
 
     @article{jones20063d,
     title={3D distance fields: A survey of techniques and applications},
@@ -32,6 +25,15 @@ See also
     https://github.com/thinks/fast-marching-method 
 for a nice description of FMM and a C++ implementation.
 '''
+# pylint: disable=invalid-name, missing-function-docstring, too-many-arguments, too-many-locals
+import heapq
+import math
+import numpy as np
+
+__all__ = [
+    'fmm'
+]
+
 
 def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
     '''Solve the Eikonal equation using the fast marching method.
@@ -74,7 +76,6 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
     dX = np.full_like(X, np.inf)
     h = []
     ns = neighbors_first_order(X.ndim) 
-    size = np.array(X.shape)
 
     def valid(idx):
         return dX[idx] < np.inf
@@ -192,14 +193,17 @@ def solve_eikonal(p0, dX, valid, Delta, f, force_first_order=False, verbose=Fals
     # We dont want to skip this, so we redo the calculation with only first order info
     try:
         dp0 = solve_quadratic(a,b,c) #(-b+math.sqrt(d))/(2*a)
-        if verbose: print('Second order', p0, a, b, c, dp0)
+        if verbose:
+            print('Second order', p0, a, b, c, dp0)
     except ValueError:
         if b == -2*sum(alpha):
-            if verbose: print('Ignored:', p0)
+            if verbose:
+                print('Ignored:', p0)
             dp0 = np.inf
         else:
             dp0 = solve_eikonal_first_order(p0, dX, valid, Delta, f)
-            if verbose: print('First order:', p0, a, b, c, dp0)
+            if verbose:
+                print('First order:', p0, a, b, c, dp0)
     return dp0
 
 def solve_quadratic(a,b,c):
@@ -259,9 +263,12 @@ def neighbors_first_order(ndim):
     -------
     list of (axis, offset) pairs.
     '''
-    if ndim == 1: return neighbors_first_order_1d
-    if ndim == 2: return neighbors_first_order_2d
-    if ndim == 3: return neighbors_first_order_3d
+    if ndim == 1:
+        return neighbors_first_order_1d
+    if ndim == 2:
+        return neighbors_first_order_2d
+    if ndim == 3:
+        return neighbors_first_order_3d
     raise NotImplementedError('Only ndim <= 3 implemented. Got ndim=', ndim)
 
 neighbors_second_order_1d = [
@@ -298,7 +305,10 @@ def neighbors_second_order(ndim):
     Each pair is the offsets in one direction from the center, e.g. x+1 and x+2.
     The smallest offset is first in each pair.
     '''
-    if ndim == 1: return neighbors_second_order_1d
-    if ndim == 2: return neighbors_second_order_2d
-    if ndim == 3: return neighbors_second_order_3d
+    if ndim == 1:
+        return neighbors_second_order_1d
+    if ndim == 2:
+        return neighbors_second_order_2d
+    if ndim == 3:
+        return neighbors_second_order_3d
     raise NotImplementedError('Only ndim <= 3 implemented. Got ndim=', ndim)

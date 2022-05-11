@@ -12,9 +12,9 @@ def setup_fim(n, ndim):
     return {'X' : X, 'F' : F, 'Delta' : 1}
     
 if __name__ == '__main__':
-    outdir = 'out'
+    outdir = 'out/benchmarks'
     os.makedirs(outdir, exist_ok=True)
-    ns = [50, 250] #, 500, 1000]
+    ns = [50, 250, 500, 1000]
     s_max_ns = 250
     min_res = []
     min_pres = []

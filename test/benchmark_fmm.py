@@ -12,7 +12,7 @@ def setup_fmm(n, ndim, force_first_order):
     return {'X' : X, 'F' : F, 'Delta' : 1, 'force_first_order' : force_first_order}
     
 if __name__ == '__main__':
-    outdir = 'out'
+    outdir = 'out/benchmarks'
     os.makedirs(outdir, exist_ok=True)
     ns = [50, 250, 500, 1000]
     min_fres = []
@@ -36,7 +36,9 @@ if __name__ == '__main__':
         print(sorted(sres))
         min_sres.append(min(sres))
 
-    n_points = np.array(n_points)        
+    n_points = np.array(n_points)
+    min_fres = np.array(min_fres)
+    min_sres = np.array(min_sres)
         
     fig = plt.figure(figsize=(12,8))
     ax = fig.add_subplot(1,2,1) 

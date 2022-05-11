@@ -20,4 +20,9 @@ testpaths = [
 disable = [
 	'trailing-whitespace',
 	'consider-using-generator',
+	'anomalous-backslash-in-string',
+	'duplicate-code'
         ]
+generated-members = [
+                  'torch.',
+                  ]	

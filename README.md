@@ -7,11 +7,6 @@ See `doc/examples` and `test` for example usage.
 * Fast Marching Method (FMM)
 * Fast Iterative Method (FIM), really the Improved Fast Iterative Method 
 
-### TODO
-* Have `tox` handle benchmarks
-* torch implementations
-
-
 
 ## Configuration
 * `pyproject.toml` : Project configuration (build, test, lint)

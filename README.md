@@ -5,12 +5,11 @@ See `doc/examples` and `test` for example usage.
 
 ## Contents
 * Fast Marching Method (FMM)
-* Fast Iterative Method (FIM)
+* Fast Iterative Method (FIM), really the Improved Fast Iterative Method 
 
-### Planned
-* Improved Fast Iterative Method (IFIM)
+### TODO
+* Have `tox` handle benchmarks
 * torch implementations
-
 
 
 
@@ -35,9 +34,16 @@ This will create a wheel and a tar ball in the directory `dist`, either of which
 ## Testing
 [`pytest`](https://docs.pytest.org/en/stable/contents.html) for running tests and [`tox`](https://tox.readthedocs.io/en/latest/) for automating the testing.
 
-Configuration for `pytest` is in `pyproject.toml`. Configuration for `tox` is in `tox.ini`.
+Configuration for `pytest` is in `pyproject.toml`. Some tests are slow and can be disabled by removing `--runslow` from the `addopts` variable. Some tests generate images that by default are stored in `test/out`. Alternative directory can be specified in the `addopts` variable with `--outdir=<path-to-directory>`.
+
+Configuration for `tox` is in `tox.ini`.
 
 Tests are run by executing `tox` without parameters from the root of the repository.
+
+
+### Benchmarks
+There are some benchmarks in the test directory for comparing seqeuential/parallel FIM, and for comparing first/second order FMM. These can be run directly from the test dir.
+
 
 ## Development
 After building the package, install development dependencies with

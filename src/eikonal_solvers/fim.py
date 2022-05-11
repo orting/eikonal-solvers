@@ -1,4 +1,31 @@
+'''Implementation of the (Improved) Fast Iterative Method (FIM) for solving eikonal equations
+based on
+
+@article{huang2021improved,
+  title={Improved Fast Iterative Algorithm for Eikonal Equation for GPU Computing},
+  author={Huang, Yuhao},
+  journal={arXiv preprint arXiv:2106.15869},
+  year={2021}
+}
+
+and
+
+@article{jeong2008fast,
+  title={A fast iterative method for eikonal equations},
+  author={Jeong, Won-Ki and Whitaker, Ross T},
+  journal={SIAM Journal on Scientific Computing},
+  volume={30},
+  number={5},
+  pages={2512--2534},
+  year={2008},
+  publisher={SIAM}
+}
+
+'''
 # pylint: disable=invalid-name
+# pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches
+# pylint: disable=too-many-nested-blocks
+# pylint: disable=missing-function-docstring
 import warnings
 import numpy as np
 
@@ -31,8 +58,8 @@ def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64):
         )
     elif X.ndim == 3:
         ns = (
-            np.stack((source[0]-1, source[0]+1, source[0]  , source[0]  , source[0]  , source[0]  )),
-            np.stack((source[1]  , source[1]  , source[1]-1, source[1]+1, source[1]  , source[1]  )),
+            np.stack((source[0]-1, source[0]+1, source[0]  , source[0]  , source[0]  , source[0] )),
+            np.stack((source[1]  , source[1]  , source[1]-1, source[1]+1, source[1]  , source[1] )),
             np.stack((source[2]  , source[2]  , source[2]  , source[2]  , source[2]-1, source[2]+1))
         )
     else:
@@ -52,7 +79,7 @@ def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64):
         if X.ndim == 2:
             new_phi, ns = update_fim_2d_parallel(*current, phi, F, *Delta, *Delta2)
         else:
-            new_phi, ns = update_fim_3d_parallel(*current, phi, F, *Delta, *Delta2)
+            new_phi, ns = update_fim_3d_parallel(*current, phi, F, *Delta)
         old_phi = phi[current]
         phi[current] = new_phi
 
@@ -88,7 +115,7 @@ def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64):
         if X.ndim == 2:
             ns_phi,_ = update_fim_2d_parallel(*ns, phi, F, *Delta, *Delta2)
         else:
-            ns_phi,_ = update_fim_3d_parallel(*ns, phi, F, *Delta, *Delta2)        
+            ns_phi,_ = update_fim_3d_parallel(*ns, phi, F, *Delta)
         use = (phi[ns] - ns_phi) > epsilon
         ns = tuple([ax[use] for ax in ns])
         active[ns] = True
@@ -119,11 +146,15 @@ def update_fim_2d_parallel(y, x, phi, F, dy, dx, dy2, dx2):
     new_phi = np.empty_like(diff)
     new_phi[idx1] = min_x[idx1] + dx/f[idx1]
     new_phi[idx2] = min_y[idx2] + dy/f[idx2]
-    new_phi[idx3] = (min_y[idx3]*dx2 + min_x[idx3]*dy2 + dy*dx*np.sqrt((dy2+dx2)/f[idx3]**2 - (min_y[idx3] - min_x[idx3])**2))/(dy2 + dx2)
+    new_phi[idx3] = (
+        min_y[idx3]*dx2 +
+        min_x[idx3]*dy2 +
+        dy*dx*np.sqrt((dy2+dx2)/f[idx3]**2 - (min_y[idx3] - min_x[idx3])**2)
+    )/(dy2 + dx2)
     
     return new_phi, (ny, nx)
 
-def update_fim_3d_parallel(z, y, x, phi, F, dz, dy, dx, dz2, dy2, dx2):
+def update_fim_3d_parallel(z, y, x, phi, F, dz, dy, dx):
     f = F[z,y,x]
 
     nz = np.stack((z-1, z+1, z  , z  , z  , z  ))
@@ -172,7 +203,11 @@ def update_fim_3d_parallel(z, y, x, phi, F, dz, dy, dx, dz2, dy2, dx2):
     new_phi[idx1] = u[idx1]
     
     i = ~idx1
-    u[i] = (b[i]*dc2[i] + c[i]*db2[i] + dc[i]*db[i]*np.sqrt((db2[i] + dc2[i])/f[i]**2 - (b[i]- c[i])**2))/(db2[i] + dc2[i])
+    u[i] = (
+        b[i]*dc2[i] +
+        c[i]*db2[i] +
+        dc[i]*db[i]*np.sqrt((db2[i] + dc2[i])/f[i]**2 - (b[i]- c[i])**2)
+    )/(db2[i] + dc2[i])
     idx2 = i & (u <= a)
     new_phi[idx2] = u[idx2]
 
@@ -213,7 +248,7 @@ def fim_sequential(X, F, Delta=1, epsilon = 1e-12, dtype=np.float64, max_iter=np
             xn = x + offset
             if np.all(xn >= 0) and np.all(xn < xsize):
                 xn = tuple(xn)
-                if phi[xn] > 0 and not xn in active:
+                if phi[xn] > 0 and xn not in active:
                     active.append(xn)
 
     iteration = 0
@@ -240,7 +275,7 @@ def fim_sequential(X, F, Delta=1, epsilon = 1e-12, dtype=np.float64, max_iter=np
                     if np.all(xn >= 0) and np.all(xn < xsize):
                         xn = tuple(xn)
                         # Any point that is not source is a candidate
-                        if phi[xn] > 0 and not xn in candidates:
+                        if phi[xn] > 0 and xn not in candidates:
                             candidates.append(xn)
             else:
                 new_active.append(x)
@@ -292,15 +327,16 @@ def update_fim_sequential_2d(i, j, phi, F, Delta):
         min_j = min(phi[i,j-1], phi[i,j+1])
 
     diff = min_i - min_j
-    if diff >  dj/f: return min_j + dj/f
-    if diff < -di/f: return min_i + di/f
+    if diff >  dj/f:
+        return min_j + dj/f
+    if diff < -di/f:
+        return min_i + di/f
     return (min_i*dj2 + min_j*di2 + di*dj*np.sqrt((di2 + dj2)/f**2 -(min_i - min_j)**2))/(di2 + dj2)
 
 
 def update_fim_sequential_3d(i, j, k, phi, F, Delta):
     f = F[i,j,k]
     di, dj, dk = Delta
-    di2, dj2, dk2 = di**2, dj**2, dk**2
 
     if i == 0:
         min_i = phi[i+1,j,k]
@@ -326,17 +362,17 @@ def update_fim_sequential_3d(i, j, k, phi, F, Delta):
     if min_i < min_j:
         if min_j < min_k:
             return solve_quadratic(min_i, min_j, min_k, di, dj, dk, f)
-        elif min_i < min_k:
-            return solve_quadratic(min_i, min_k, min_j, di, dk, dj, f)
-        else:
-            return solve_quadratic(min_k, min_i, min_j, dk, di, dj, f)
-    else:
         if min_i < min_k:
-            return solve_quadratic(min_j, min_i, min_k, dj, di, dk, f)
-        elif min_j < min_k:
-            return solve_quadratic(min_j, min_k, min_i, dj, dk, di, f)
-        else:
-            return solve_quadratic(min_k, min_j, min_i, dk, dj, di, f)
+            return solve_quadratic(min_i, min_k, min_j, di, dk, dj, f)
+        return solve_quadratic(min_k, min_i, min_j, dk, di, dj, f)
+    
+    if min_i < min_k:
+        return solve_quadratic(min_j, min_i, min_k, dj, di, dk, f)
+    
+    if min_j < min_k:
+        return solve_quadratic(min_j, min_k, min_i, dj, dk, di, f)
+    
+    return solve_quadratic(min_k, min_j, min_i, dk, dj, di, f)
         
 
 def solve_quadratic(c,b,a,dc,db,da,f):

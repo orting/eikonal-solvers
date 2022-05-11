@@ -127,6 +127,25 @@ def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64):
     return phi[tuple([slice(1,s-1) for s in X.shape])]
 
 def update_fim_2d_parallel(y, x, phi, F, dy, dx, dy2, dx2):
+    '''Algorithm 1.2 in \cite{huang2021improved}.
+    Note that there is a mistake in Algorithm 1.2, the criteria for choosing how to update
+    should be
+    \begin{equation}
+    \phi^{minx} - \phi^{miny} > \frac{\Delta y}{f} \implies 
+      \phi_{ij} = \phi^{miny} + \frac{\Delta y}{f}
+    \end{equation}
+
+    instead of
+    \begin{equation}
+    \phi^{minx} - \phi^{miny} > \sqrt{\frac{\Delta y^ + \Delta x^2}{f^2}} \implies 
+      \phi_{ij} = \phi^{miny} + \frac{\Delta y}{f}
+    \end{equation}
+
+    The point is to ensure that we go directly from a neighbor to the current point,
+    if the distance through that neighbor is smaller than any path that also pass
+    through a neighbor in the orthogonal direction.
+    
+    '''
     f = F[y,x]
     
     ny = np.stack((y-1, y+1, y  , y  ))

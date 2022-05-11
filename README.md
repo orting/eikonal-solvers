@@ -1,6 +1,6 @@
 # Python implementations of eikonal solvers
 Intended to simplify experimentation and comparison of different algorithms for solving the eikonal equation in 2D and 3D.
-Currently implemented using `numpy`.
+FMM implemented in `numpy`. FIM implemented in `numpy`and `torch`.
 See `doc/examples` and `test` for example usage.
 
 ## Contents

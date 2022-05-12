@@ -86,7 +86,8 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
         for ax,n in ns:
             p0 = p[:ax] + (p[ax]+n,) + p[(1+ax):]
             if F[p0] > 0 and X[p0] > 0:
-                heapq.heappush(h, (Delta[ax], p0))
+                dp0 = solve_eikonal(p0, dX, valid, Delta, F[p0], force_first_order=True)
+                heapq.heappush(h, (dp0, p0))
 
     if max_r < np.min(Delta):
         print(max_r, Delta)

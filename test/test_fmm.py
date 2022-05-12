@@ -64,6 +64,28 @@ def test_accuracy_with_gridspacing(outdir):
         assert second_errors[i] > second_errors[i-1]        
     
 
+def test_distance_to_center_2d(outdir):
+    outpath = 'fmm_distance_to_center_2d.png'
+    if len(outdir) > 0:
+        os.makedirs(outdir, exist_ok=True)
+        outpath = os.path.join(outdir, outpath)
+    I = np.zeros((11,11))
+    I[1:10,1:10] = 1
+    F = np.ones_like(I)    
+    dI = fmm(I, F, 1, force_first_order=False)
+
+    plt.figure(figsize=(16,16))
+    plt.subplot(1,2,1)
+    plt.imshow(I, cmap='gray')
+    plt.title('I')
+    plt.subplot(1,2,2)
+    plt.imshow(dI)
+    plt.title('Second order FMM distance')
+    plt.savefig(outpath)
+    
+    assert dI[1,1] == dI[9,9]
+    assert dI[1,1] == dI[1,9]
+    assert dI[1,1] == dI[9,1]        
 
 def test_accuracy_first_order_2d(outdir):
     outpath='accuracy_fmm_isotropic_2d_first_order.png'

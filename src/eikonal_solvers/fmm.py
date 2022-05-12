@@ -79,7 +79,8 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
 
     def valid(idx):
         return dX[idx] < np.inf
-        
+
+    initial = set()
     for p in np.argwhere(X == 0):
         p = tuple(p)
         dX[p] = 0
@@ -87,6 +88,7 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
             p0 = p[:ax] + (p[ax]+n,) + p[(1+ax):]
             if F[p0] > 0 and X[p0] > 0:
                 dp0 = solve_eikonal(p0, dX, valid, Delta, F[p0], force_first_order=True)
+                initial.add(p0)
                 heapq.heappush(h, (dp0, p0))
 
     if max_r < np.min(Delta):
@@ -103,6 +105,10 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
         dX[p] = dp
         for ax,n in ns:
             p0 = p[:ax] + (p[ax]+n,) + p[(1+ax):]
+            if p0 in initial:
+                # Do not recompute for points that where part of the initial
+                # boundary region.
+                continue
             if F[p0] > 0 and dX[p0] == np.inf:
                 dp0 = solve_eikonal(p0, dX, valid, Delta, F[p0], force_first_order)
                 if dp0 <= max_r:

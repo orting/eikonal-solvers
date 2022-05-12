@@ -4,12 +4,12 @@ these should be inspected to understand the approximation errors.
 '''
 # pylint: disable=invalid-name, missing-function-docstring, too-many-locals
 import os
+import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import distance_transform_edt
 from test_data import point_source
 from eikonal_solvers.fmm import fmm
-import pytest
 
 def test_accuracy_with_gridspacing(outdir):
     outpath = 'accuracy_fmm_gridspacing_2d.png'
@@ -87,6 +87,40 @@ def test_distance_to_center_2d(outdir):
     assert dI[1,1] == dI[1,9]
     assert dI[1,1] == dI[9,1]        
 
+def test_distance_to_center_3d(outdir):
+    outpath = 'fmm_distance_to_center_3d.png'
+    if len(outdir) > 0:
+        os.makedirs(outdir, exist_ok=True)
+        outpath = os.path.join(outdir, outpath)
+    I = np.zeros((11,11,11))
+    I[1:10,1:10,1:10] = 1
+    F = np.ones_like(I)    
+    dI = fmm(I, F, 1, force_first_order=False)
+
+    plt.figure(figsize=(16,16))
+    plt.subplot(2,2,1)
+    plt.imshow(I[1], cmap='gray')
+    plt.title('I')
+    plt.subplot(2,2,2)
+    plt.imshow(dI[1])
+    plt.title('Second order FMM distance (1)')
+    plt.subplot(2,2,3)
+    plt.imshow(dI[5])
+    plt.title('Second order FMM distance (5)')
+    plt.subplot(2,2,4)
+    plt.imshow(dI[9])
+    plt.title('Second order FMM distance (9)')
+    plt.savefig(outpath)
+    
+    assert dI[1,1,1] == dI[9,9,9]
+    assert dI[1,1,1] == dI[1,9,9]
+    assert dI[1,1,1] == dI[9,1,9]
+    assert dI[1,1,1] == dI[9,9,1]
+    assert dI[1,1,1] == dI[1,1,9]
+    assert dI[1,1,1] == dI[1,9,1]
+    assert dI[1,1,1] == dI[9,1,1]
+
+    
 def test_accuracy_first_order_2d(outdir):
     outpath='accuracy_fmm_isotropic_2d_first_order.png'
     if len(outdir) > 0:
@@ -218,4 +252,3 @@ def _test_accuracy(force_first_order=False, ndim=2, Delta=1, outpath='out_test.p
 
     fig.savefig(outpath)    
     return mean_abs_error, max_abs_error
-

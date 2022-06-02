@@ -3,6 +3,8 @@ Intended to simplify experimentation and comparison of different algorithms for 
 FMM implemented in `numpy`. FIM implemented in `numpy`and `torch`.
 See `doc/examples` and `test` for example usage.
 
+The python overhead for FMM is quite large, so if you need something fast with a python interface have a look at [https://github.com/scikit-fmm/scikit-fmm](https://github.com/scikit-fmm/scikit-fmm)
+
 ## Contents
 * Fast Marching Method (FMM)
 * Fast Iterative Method (FIM), really the Improved Fast Iterative Method 

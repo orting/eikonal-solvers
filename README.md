@@ -49,6 +49,6 @@ After building the package, install development dependencies with
     
 We use [`pylint`](https://pylint.org/) to do static check and enforce coding standards. Configuration is in `pyproject.toml`. To run do
 
-    pylint src/breathct/classification
-
+    pylint src/eikonal_solvers
+    
 and either fix the issues or explicitly ignore them. See the documentation for details on controling linting, including which naming convention to enforce.

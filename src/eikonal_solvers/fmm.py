@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 
-def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
+def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False, X_is_distance=False):
     '''Solve the Eikonal equation using the fast marching method.
 
     Uses second order finite differences. For an isotropic grid, this gives much
@@ -48,7 +48,8 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
     Parameters
     ----------
     X : ndarray
-      Calculates distance from X==0 to all other pixels
+      Calculates distance from X==0 to all other pixels. Except if X_is_distance is True, 
+      in which case it is the distance from X < np.inf
 
     F : ndarray, same shape as X
       Speed function. F(x) = 0 implies x cannot be reached.
@@ -62,6 +63,9 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
     force_first_order : bool (optional)
       If True only use first order finite differences.
 
+    X_is_distance : bool (optional)
+      If True use finite values in X as an initial distance map and propagate that distance
+
     Returns
     -------
     ndarray with distance transform, np.inf indicates unreachable indices
@@ -71,7 +75,10 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
         Delta = (float(Delta), )*X.ndim
     except TypeError:
         pass
-    X = np.pad(X, 1, constant_values=1)
+    if X_is_distance:
+        X = np.pad(X, 1, constant_values=np.inf)
+    else:
+        X = np.pad(X, 1, constant_values=1)
     F = np.pad(F, 1, constant_values=0)
     dX = np.full_like(X, np.inf)
     h = []
@@ -81,12 +88,17 @@ def fmm(X, F, Delta=1, max_r=np.inf, force_first_order=False):
         return dX[idx] < np.inf
 
     initial = set()
-    for p in np.argwhere(X == 0):
+    if X_is_distance:
+        initial_mask = X < np.inf
+    else:
+        initial_mask = X == 0
+    for p in np.argwhere(initial_mask):
         p = tuple(p)
-        dX[p] = 0
+        dX[p] = X[p] if X_is_distance else 0 
         for ax,n in ns:
             p0 = p[:ax] + (p[ax]+n,) + p[(1+ax):]
-            if F[p0] > 0 and X[p0] > 0:
+            is_outside = (X_is_distance and X[p0] == np.inf) or (not X_is_distance and X[p0] > 0)
+            if F[p0] > 0 and is_outside:
                 dp0 = solve_eikonal(p0, dX, valid, Delta, F[p0], force_first_order=True)
                 initial.add(p0)
                 heapq.heappush(h, (dp0, p0))

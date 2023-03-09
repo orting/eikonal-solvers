@@ -30,11 +30,64 @@ import warnings
 import numpy as np
 
 __all__ = [
+    'binary_dilation',
     'fim',
     'fim_sequential'
 ]
 
-def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64):
+def binary_dilation(X, radius):
+    '''Binary dilation of X by ball(radius) using FIM method
+
+    Parameters
+    ----------
+    X : ndarray
+      Dilates X != 0
+    
+    radius : float
+      Radius of ball to dilate with
+
+    Returns
+    -------
+    binary ndarray of same shape as X with dilation of X
+    '''
+    max_iter = 2*radius + 1 # Seems like a good number...
+    F = np.ones_like(X, dtype=float)
+    return fim(np.logical_not(X), F, max_iter=max_iter) <= radius
+
+
+def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64, verbose=False):
+    '''Solve the Eikonal equation using the improved fast iterative method.
+
+    Uses first order finite differences. 
+    
+    Parameters
+    ----------
+    X : ndarray
+      Calculates distance from X==0 to all other pixels
+
+    F : ndarray, same shape as X
+      Speed function. F(x) = 0 implies x cannot be reached.
+
+    Delta : float or sequence of float with len(Delta) == X.ndim (optional)
+      Distance between neighboring pixels along each axis
+
+    epsilon : float (optional)
+      A point is converged if its abs(new value - old value) < epsilon
+
+    max_iter : int (optional)
+      Maximum number of iterations. If Delta is isotropic, then this can be used to control the
+      maximum distance to calculate as max_iter * Delta
+      For large X this can decrease run time significantly. But be aware that it will not necesarily
+      mean that all pixels within that distance have converged.
+
+    verbose : bool (optional)
+      If True print some information
+
+    Returns
+    -------
+    ndarray with distance transform, np.inf indicates unreachable indices
+      
+    '''
     if epsilon < 1e-5 and dtype == np.float32:
         warnings.warn('Using epsilon < 1e-5 and float32 could lead to numerical instability. '
                       'Forcing dtype float64')
@@ -121,7 +174,7 @@ def fim(X, F, Delta=1, epsilon=1e-12, max_iter=np.inf, dtype=np.float64):
         active[ns] = True
         phi[ns] = ns_phi[use]
 
-    if iteration == max_iter:
+    if verbose and iteration == max_iter:
         print('Reached max iterations before convergence', iteration)
 
     return phi[tuple([slice(1,s-1) for s in X.shape])]
@@ -240,6 +293,9 @@ def update_fim_3d_parallel(z, y, x, phi, F, dz, dy, dx):
     
 
 def fim_sequential(X, F, Delta=1, epsilon = 1e-12, dtype=np.float64, max_iter=np.inf):
+    '''Sequential implementation of FIM for reference. Do NOT use for computations as it is much
+    slower than FIM for the same output.
+    '''
     try:
         Delta = (float(Delta), )* X.ndim
     except TypeError:
